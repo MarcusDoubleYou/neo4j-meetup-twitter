@@ -1,0 +1,84 @@
+import csv
+from time import sleep
+
+import twitter
+import pandas as pd
+import re
+
+
+def remove_non_ascii(text):
+    return re.sub('[^A-Za-z0-9./:]+', ' ', text)
+
+
+# insert twitter key
+api = twitter.Api(consumer_key='',
+                  consumer_secret='',
+                  access_token_key='',
+                  access_token_secret='')
+
+print(api.VerifyCredentials())
+
+
+# credit/ orginal source  https://gist.githubusercontent.com/mbejda/9c3353780270e7298763/raw/1bfc4810db4240d85947e6aef85fcae71f475493/Top-1000-Celebrity-Twitter-Accounts.csv
+# get twitter names from actors
+def get_list_of_users(filename='/../data/Top-1000-Celebrity-Twitter-Accounts.csv'):
+    return pd.read_csv(filename)['twitter'].values
+
+
+def write_tweets_to_csv(filename='../data/tweets-sample.csv', create_new=False, users=["@britneyspears"],
+                        tweets_per_user=50):
+    """
+    will collect most recent tweets and write to file
+    :param filename:
+    :param create_new: append to existing or create new
+    :param users: name of twitter users
+    :param tweets_per_user: number of tweets collcted
+    :return:
+    """
+    user_counter = 0
+    if create_new:
+        header = ['id', 'user', 'text', 'created_at_in_seconds', 'created_at', 'retweeted', 'favorite_count',
+                  'hashtags', 'urls']
+        with open(filename, "w") as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(header)
+
+    for u in users:
+        user_counter = user_counter + 1
+        print("getting tweets for", u, user_counter)
+
+        try:
+            tweets = api.GetUserTimeline(screen_name=u, count=tweets_per_user)
+            string_list_deli = "||"
+            with open(filename, "a") as csv_file:
+                writer = csv.writer(csv_file)
+                rows = list()
+                for t in tweets:
+                    # converting lists to string with
+                    urls_list = [u.url for u in t.urls]
+                    urls = string_list_deli.join(urls_list)
+                    tags = [h.text for h in t.hashtags]
+                    hashtags = string_list_deli.join(tags)
+
+                    row = [
+                        t.id_str
+                        + "," + u
+                        # + "," + str(t.text).replace("\n", " ")
+                        + "," + remove_non_ascii(t.text)
+                        + "," + str(t.created_at_in_seconds)
+                        + "," + str(t.created_at)
+                        + "," + str(t.retweeted)
+                        + "," + str(t.favorite_count)
+                        + "," + hashtags
+                        + "," + urls]
+                    rows.append(row)
+                writer.writerows(rows)
+        except twitter.error.TwitterError as err:
+            print("error getting tweets for user")
+            print(err)
+        # avoid excessive reads
+        sleep(5)
+
+
+# uncomment to get tweets
+write_tweets_to_csv(create_new=True, filename="tweets-sample.csv", users=get_list_of_users())
