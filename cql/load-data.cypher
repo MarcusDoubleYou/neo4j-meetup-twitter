@@ -1,9 +1,3 @@
-// when used with the sample movie graph in the neo4j browser
-MATCH (p:Person)
-SET p:User
-SET p:Actor
-REMOVE p:Person
-
 // explore data
 LOAD CSV WITH HEADERS FROM 'https://gist.githubusercontent.com/mbejda/9c3353780270e7298763/raw/1bfc4810db4240d85947e6aef85fcae71f475493/Top-1000-Celebrity-Twitter-Accounts.csv'
 AS l
@@ -33,5 +27,16 @@ UNWIND tags AS t
 MATCH (tweet:Tweet {tweetId: tweetId})
 MERGE (tag:Hashtag {name: t})
 MERGE (tag)<-[:TAGS]-(tweet)
+
+
+// when used with the sample movie graph in the neo4j browser
+MATCH (p:Person)
+SET p:User
+SET p:Actor
+REMOVE p:Person
+
+
+
+
 
 
