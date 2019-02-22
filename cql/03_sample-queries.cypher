@@ -21,7 +21,7 @@ RETURN u, liked
   LIMIT 10
 
 // top trending hashtags
-MATCH (t:Tweet)--(tag:Hashtag)
+MATCH (t:Tweet)<-[:TWEETED]-(tag:Hashtag)
 WITH DISTINCT (tag), sum(toInt(coalesce(t.favoriteCount, 0))) AS liked
 RETURN tag, liked
   ORDER BY liked DESC
@@ -43,6 +43,15 @@ RETURN u, tag, taged, liked
 
 // only works with movie graph
 MATCH (t:Tweet)<-[:TWEETED]-(u:Actor)
+WITH DISTINCT (u), sum(toInt(coalesce(t.favoriteCount, 0))) AS liked
+// relationship can be specified without label and direction
+// this can be usual for quick data exploration but can easily lead to poor performance in production
+MATCH (u)--(m:Movie)
+RETURN u, m.title
+  LIMIT 25
+
+// use profile to see difference
+PROFILE MATCH (t:Tweet)<-[:TWEETED]-(u:Actor)
 WITH DISTINCT (u), sum(toInt(coalesce(t.favoriteCount, 0))) AS liked
 MATCH (u)--(m:Movie)
 RETURN u, m.title
